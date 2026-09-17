@@ -34,6 +34,28 @@ This project implements **laser-based odometry** to bypass the severe wheel slip
 
 ---
 
+## Future Improvements & Roadmap
+
+Here is a roadmap of upcoming features, expansions, and experiments planned for the robot:
+
+### 1. Sensor Suite Expansions
+* [ ] **Add a Camera:** Integrate a depth or RGB camera (e.g., RealSense or OAK-D) for visual SLAM, object detection, or person-following.
+* [ ] **IMU / Gyro Integration:** Incorporate a hardware IMU to fuse high-frequency rotation data with `rf2o` laser odometry using an EKF (`robot_localization` package).
+
+### 2. Autonomy & Navigation
+* [ ] **Autonomous Navigation (Nav2):** Configure costmaps, global/local planners, and behavior trees to enable autonomous point-to-point navigation and obstacle avoidance.
+* [ ] **Wayland / Patrol Routes:** Set up pre-defined goal waypoints for automated looping or patrol demos.
+
+### 3. Software & Telemetry Enhancements
+* [ ] **Foxglove Studio / Web Dashboard:** Set up a lightweight web-based telemetry stream or Foxglove connection for remote monitoring without needing a full local ROS 2 GUI setup.
+* [ ] **Auto-Docking / Charging:** Explore docking logic for automated battery management.
+
+### 4. Gazebo Simulation & Digital Twin
+* [ ] **Integrate Simulation Models:** Import existing wheel meshes, chassis URDF, and sensor plugins into Gazebo.
+* *Note:* Evaluate utility primarily for safely benchmarking Nav2 path planners and recovery behaviors.
+
+---
+
 ## Project Gallery
 
 *(Add images or architecture diagrams to an `images/` directory in the repo and reference them below)*
