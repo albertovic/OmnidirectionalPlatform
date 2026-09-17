@@ -69,7 +69,6 @@ class JoyToSerial(Node):
         cmd_rl = int(rl * MAX_TICKS)
         cmd_rr = int(rr * MAX_TICKS)
         
-        # Just update the variable, do not write to Serial here!
         self.latest_command = f"{cmd_fl},{cmd_fr},{cmd_rl},{cmd_rr}\n"
 
     def timer_callback(self):
@@ -89,8 +88,7 @@ class JoyToSerial(Node):
                                 msg.data = [int(parts[1]), int(parts[2]), int(parts[3]), int(parts[4])]
                                 self.tick_pub.publish(msg)
                             except ValueError:
-                                # A corrupted byte snuck into the string. 
-                                # Ignore this specific packet to prevent a crash.
+                                # Ignore corrupted packets to prevent a crashes.
                                 pass
 
                 # self.get_logger().info(f"Target Ticks: {self.latest_command.strip()}")
