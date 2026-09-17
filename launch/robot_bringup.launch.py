@@ -3,14 +3,14 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     return LaunchDescription([
-        # 1. The Bridge Node (Joystick to Arduino)
+        # The Bridge Node (Joystick to Arduino)
         Node(
             package='omnidirectional_robot',
             executable='joyToSerial',
             name='joyToSerial',
             output='screen'
         ),
-        # 2. The Odometry Node (Ticks to Map Coordinates)
+        # The Odometry Node (Ticks to Map Coordinates)
         Node(
             package='omnidirectional_robot',
             executable='mecanum_odom',
