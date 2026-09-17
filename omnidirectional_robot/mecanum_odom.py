@@ -16,7 +16,6 @@ class MecanumOdom(Node):
         self.TPR = 225 # Empirically
         self.METERS_PER_TICK = (2.0 * math.pi * self.RADIUS) / self.TPR
         
-        # YOU MUST MEASURE THESE ON YOUR PHYSICAL CHASSIS (in meters)
         self.LX = 0.104  # Distance from robot center to front/back wheel axis (wheel_offset_x)
         self.LY = 0.088  # Distance from robot center to left/right wheel axis (wheel_offset_y)
         
@@ -55,7 +54,7 @@ class MecanumOdom(Node):
         self.prev_ticks = current_ticks
         self.last_time = current_time
 
-        # Mecanum Forward Kinematics (Robot Centric)
+        # Mecanum Forward Kinematics
         dx = (d_fl + d_fr + d_rl + d_rr) / 4.0
         dy = (-d_fl + d_fr + d_rl - d_rr) / 4.0
         dtheta = (-d_fl + d_fr - d_rl + d_rr) / (4.0 * (self.LX + self.LY))
