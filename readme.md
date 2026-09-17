@@ -6,9 +6,9 @@ This project implements **laser-based odometry** to bypass the severe wheel slip
 
 ---
 
-## 🛠️ System Architecture & Hardware Stack
+## System Architecture & Hardware Stack
 
-* **Central Computer (SBC):** Orange Pi 5B running ROS 2 Foxy.
+* **Central Computer:** Orange Pi 5B running ROS 2 Foxy.
 * **Microcontroller:** Arduino Mega (handling low-level PWM motor drivers and serial communication via `joyToSerial`).
 * **Sensors:** Slamtec SLLidar (connected via `/dev/ttyUSB0` at 10Hz).
 * **Drive System:** 4-wheel mecanum drive.
@@ -17,7 +17,7 @@ This project implements **laser-based odometry** to bypass the severe wheel slip
 
 ---
 
-## 🚀 What Has Been Done (Milestones)
+## What Has Been Done (Milestones)
 
 1. **Low-Level Control & Teleoperation:**
    * Developed custom serial communication between the Orange Pi and Arduino Mega (`joyToSerial`).
