@@ -34,6 +34,57 @@ This project implements **laser-based odometry** to bypass the severe wheel slip
 
 ---
 
+
+# Orange Pi & Laptop Workflows
+
+*(Requirement: Ensure `export ROS_DOMAIN_ID=1` is set in all active terminals on both machines so they can communicate over Wi-Fi).*
+
+---
+
+## Mode A: Building a Map (SLAM)
+
+**1. On the Orange Pi (Hardware Layer):**
+Start the LiDAR, odometry, and Arduino bridge.
+```bash
+cd ~/ros2_ws_orangepi
+source install/setup.bash
+ros2 launch omnidirectional_robot robot_bringup.launch.py
+```
+
+**2. On the Laptop (SLAM Layer):**
+Launch the joystick driver, SLAM Toolbox, and RViz to visualize the mapping process.
+```bash
+ros2 launch ~/mapping.launch.py
+```
+*(Drive the robot around the environment until the map looks complete and enclosed in RViz).*
+
+**3. On the Orange Pi (Save the Map):**
+Open a *new SSH terminal* into the Orange Pi and save the map directly into your package's `maps` folder:
+```bash
+cd ~/ros2_ws_orangepi/src/omnidirectional_robot/maps
+ros2 run nav2_map_server map_saver_cli -f my_room_map
+```
+*(This generates `my_room_map.yaml` and `my_room_map.pgm` directly on the robot).*
+
+## Mode B: Autonomous Navigation
+
+**1. On the Orange Pi (Hardware + Autonomy Brain):**
+Launch the master file. This brings up the hardware AND the Nav2 planners simultaneously. It uses `my_room_map.yaml` by default.
+```bash
+cd ~/ros2_ws_orangepi
+source install/setup.bash
+ros2 launch omnidirectional_robot navigation.launch.py
+```
+*(To use a different map, run: `ros2 launch omnidirectional_robot navigation.launch.py map:=/home/orangepi/ros2_ws_orangepi/src/omnidirectional_robot/maps/other_map.yaml`)*
+
+**2. On the Laptop (Remote Control & Visualization):**
+Launch the Nav2 visualization tools. Use the "2D Pose Estimate" button to tell the robot where it is, and the "Nav2 Goal" button to tell it where to drive.
+```bash
+ros2 launch ~/nav2_view.launch.py
+```
+
+---
+
 ## Future Improvements & Roadmap
 
 Here is a roadmap of upcoming features, expansions, and experiments planned for the robot:
@@ -63,25 +114,7 @@ Here is a roadmap of upcoming features, expansions, and experiments planned for 
 
 ## Command Cheatsheet
 
-1. Orange Pi (Robot Side)
-```bash
-# Source your ROS 2 workspace
-cd ~/ros2_ws_orangepi
-source install/setup.bash
-
-# Launch hardware drivers, joy control, and laser odometry
-ros2 launch omnidirectional_robot robot_bringup.launch.py
-```
-
-2. Laptop (Control & SLAM Side)
-(Make sure export ROS_DOMAIN_ID=1 is set if communicating across machines)
-
-```Bash
-# Launch laptop SLAM and RViz2 visualization
-ros2 launch ~/laptop_slam.launch.py
-```
-
-3. Diagnostics & Debugging
+1. Diagnostics & Debugging
 
 ```Bash
 # Check active topics and verify /scan is alive
@@ -94,23 +127,23 @@ ros2 topic info /scan --verbose
 ros2 topic echo /odom
 ```
 
-4. Saving the Map
+2. Saving the Map
 ```Bash
 # Run this from your laptop terminal once mapping is complete
 ros2 run nav2_map_server map_saver_cli -f ~/my_room_map
 ```
 
-5. Managing Packages Over SSH Without Ethernet 
+3. Managing Packages Over SSH Without Ethernet 
 
 If the robot is operating on an isolated network and cannot connect directly to Wi-Fi, you can route the Orange Pi's package manager (`apt`) through your laptop's internet connection using a reverse SOCKS proxy over SSH.
 
-### Step 1: Open a Reverse Proxy SSH Session (Laptop Terminal)
+Step 1: Open a Reverse Proxy SSH Session (Laptop Terminal)
 Open a new terminal on your laptop and log into the Orange Pi with the `-R` flag to open port `8080`:
 ```bash
 ssh -R 8080 orangepi@<YOUR_ORANGE_PI_IP>
 ```
 
-### Step 2: Run APT Updates & Installs (Orange Pi Terminal)
+Step 2: Run APT Updates & Installs (Orange Pi Terminal)
 Inside that SSH session, override apt to route traffic through the local proxy tunnel:
 ```bash
 # Update package lists
@@ -120,6 +153,21 @@ sudo apt -o Acquire::http::Proxy="socks5h://localhost:8080" update
 sudo apt -o Acquire::http::Proxy="socks5h://localhost:8080" install ros-foxy-navigation2 ros-foxy-nav2-bringup
 ```
 
+Or to use Git with this method:
+
+```bash
+# Push your changes
+git -c http.proxy="socks5h://localhost:8080" push origin main
+
+# Pull changes
+git -c http.proxy="socks5h://localhost:8080" pull origin main
+```
+
+Or to use curl:
+
+```bash
+curl -x socks5h://localhost:8080 -O <link to download>
+```
 
 
 
