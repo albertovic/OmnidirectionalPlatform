@@ -99,3 +99,32 @@ ros2 topic echo /odom
 # Run this from your laptop terminal once mapping is complete
 ros2 run nav2_map_server map_saver_cli -f ~/my_room_map
 ```
+
+5. Managing Packages Over SSH Without Ethernet 
+
+If the robot is operating on an isolated network and cannot connect directly to Wi-Fi, you can route the Orange Pi's package manager (`apt`) through your laptop's internet connection using a reverse SOCKS proxy over SSH.
+
+### Step 1: Open a Reverse Proxy SSH Session (Laptop Terminal)
+Open a new terminal on your laptop and log into the Orange Pi with the `-R` flag to open port `8080`:
+```bash
+ssh -R 8080 orangepi@<YOUR_ORANGE_PI_IP>
+```
+
+### Step 2: Run APT Updates & Installs (Orange Pi Terminal)
+Inside that SSH session, override apt to route traffic through the local proxy tunnel:
+```bash
+# Update package lists
+sudo apt -o Acquire::http::Proxy="socks5h://localhost:8080" update
+
+# Install ROS 2 or system packages (e.g., Nav2)
+sudo apt -o Acquire::http::Proxy="socks5h://localhost:8080" install ros-foxy-navigation2 ros-foxy-nav2-bringup
+```
+
+
+
+
+
+
+
+
+
