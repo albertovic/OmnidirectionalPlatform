@@ -90,6 +90,12 @@ Launch the visualization tools. Use the "2D Pose Estimate" button to tell the ro
 ros2 launch ./laptop_launch_files/visualize_omni_robot.launch.py
 ```
 
+## Activate People Tracking:
+Launch the people trackikng node (from the gtihub repo: https://github.com/TeamSOBITS/2d_lidar_person_detection/tree/humble-devel) through the following command:
+```bash
+ros2 launch dr_spaam_ros dr_spaam_ros.launch.py 
+```
+
 ---
 
 # Future Improvements & Roadmap
