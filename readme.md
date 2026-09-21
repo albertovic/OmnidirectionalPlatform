@@ -116,8 +116,10 @@ Here is a roadmap of upcoming features and expansions planned for the robot:
 
 ## Project Gallery
 
-*(Add images or architecture diagrams to an `images/` directory in the repo and reference them below)*
-
+![alt text](https://github.com/albertovic/OmnidirectionalPlatform/blob/master/images/circuit_image.png)
+![alt text](https://github.com/albertovic/OmnidirectionalPlatform/blob/master/images/IMG_4819.JPEG)
+![alt text](https://github.com/albertovic/OmnidirectionalPlatform/blob/master/images/IMG_4821.JPEG)
+![alt text](https://github.com/albertovic/OmnidirectionalPlatform/blob/master/images/IMG_4822.JPEG)
 
 ## Command Cheatsheet
 
