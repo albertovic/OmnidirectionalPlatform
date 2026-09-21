@@ -25,7 +25,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'joyToSerial = omnidirectional_robot.joy_subscriber:main',
+            'TwistToSerial = omnidirectional_robot.twist_to_serial:main',
             'mecanum_odom = omnidirectional_robot.mecanum_odom:main',
         ],
     },
