@@ -1,9 +1,14 @@
+import os
 from launch import LaunchDescription
 from launch_ros.actions import Node
-import os
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
+    # Get the path to the standard slam_toolbox launch directory
+    slam_toolbox_dir = get_package_share_directory('slam_toolbox')
+
     return LaunchDescription([
         # Twist Multiplexer (Blends Joystick and Nav2)
         Node(
@@ -20,6 +25,7 @@ def generate_launch_description():
             name='TwistToSerial',
             output='screen'
         ),
+        
         # The Odometry Node (Ticks to Map Coordinates)
         Node(
             package='omnidirectional_robot',
@@ -29,7 +35,6 @@ def generate_launch_description():
         ),
 
         # Static Transform (Robot Center to LiDAR)
-        # Arguments: [x, y, z, yaw, pitch, roll, parent_frame, child_frame]
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
@@ -52,6 +57,14 @@ def generate_launch_description():
             }]
         ),
 
+        # SLAM Frame Bypass (Matches base_footprint to base_link)
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='footprint_to_link',
+            arguments=['0.0', '0.0', '0.0', '0.0', '0.0', '0.0', 'base_link', 'base_footprint']
+        ),
+
         # Laser Odometry (Replaces wheel encoders)
         Node(
             package='rf2o_laser_odometry',
@@ -69,4 +82,12 @@ def generate_launch_description():
                 'freq' : 20.0
             }]
         ),
+        
+        # SLAM Toolbox (Live Mapping)
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(slam_toolbox_dir, 'launch', 'online_async_launch.py')
+            ),
+            launch_arguments={'use_sim_time': 'False'}.items()
+        )
     ])
