@@ -96,15 +96,15 @@ ros2 launch ./laptop_launch_files/visualize_omni_robot.launch.py
 Here is a roadmap of upcoming features and expansions planned for the robot:
 
 1. Sensor Suite Expansions
-[ ] Add a Camera: Integrate a depth or RGB camera for visual tracking or obstacle inspection.
+- Add a Camera: Integrate a depth or RGB camera for visual tracking or obstacle inspection.
 
-[ ] IMU / Gyro Integration: Incorporate a hardware IMU to fuse high-frequency rotation data with rf2o laser odometry using an EKF (robot_localization).
+- IMU / Gyro Integration: Incorporate a hardware IMU to fuse high-frequency rotation data with rf2o laser odometry using an EKF (robot_localization).
 
 2. Autonomy & Navigation
-[ ] Auto-Docking / Charging: Explore docking logic for automated battery management.
+- Auto-Docking / Charging: Explore docking logic for automated battery management.
 
 3. Gazebo Simulation & Digital Twin
-[ ] Integrate Simulation Models: Import existing wheel meshes, chassis URDF, and sensor plugins into Gazebo to safely benchmark custom path planners.
+- Integrate Simulation Models: Import existing wheel meshes, chassis URDF, and sensor plugins into Gazebo to safely benchmark custom path planners.
 
 ---
 
@@ -139,10 +139,10 @@ Or to use Git with this method:
 
 ```bash
 # Push your changes
-git -c http.proxy="socks5h://localhost:8080" push origin main
+git -c http.proxy="socks5h://localhost:8080" push origin master
 
 # Pull changes
-git -c http.proxy="socks5h://localhost:8080" pull origin main
+git -c http.proxy="socks5h://localhost:8080" pull origin master
 ```
 
 Or to use curl:
