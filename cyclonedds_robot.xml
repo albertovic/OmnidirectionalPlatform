@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Laptop side: pin DDS to the USB Wi-Fi card connected to the Orange Pi hotspot (192.168.4.x) -->
+<CycloneDDS>
+  <Domain id="any">
+    <General>
+      <NetworkInterfaceAddress>wlxaca7f1ccfe81</NetworkInterfaceAddress>
+    </General>
+  </Domain>
+</CycloneDDS>

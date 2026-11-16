@@ -30,7 +30,66 @@ This project implements **laser-based odometry** to bypass the severe wheel slip
 
 # Orange Pi & Laptop Workflows
 
-*(Requirement: Ensure `export ROS_DOMAIN_ID=1` and your CycloneDDS configuration are active in all terminals on both machines so they can communicate over Wi-Fi).*
+## Network Setup (Orange Pi hotspot + laptop USB Wi-Fi)
+
+The Orange Pi runs its own Wi-Fi hotspot on `wlan0` (**192.168.4.1**). The laptop joins it through a **USB Wi-Fi card** (`wlxaca7f1ccfe81`, gets 192.168.4.x), while its built-in card `wlo1` stays on the home Wi-Fi for internet. DDS must be pinned to the hotspot interface on both sides, otherwise discovery silently fails.
+
+Both machines use `RMW_IMPLEMENTATION=rmw_cyclonedds_cpp` and `ROS_DOMAIN_ID=1`.
+
+**Orange Pi** — `~/cyclonedds.xml`:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<CycloneDDS>
+  <Domain id="any">
+    <General>
+      <NetworkInterfaceAddress>wlan0</NetworkInterfaceAddress>
+    </General>
+  </Domain>
+</CycloneDDS>
+```
+and in `~/.bashrc`:
+```bash
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+export ROS_DOMAIN_ID=1
+export CYCLONEDDS_URI=file:///home/orangepi/cyclonedds.xml
+```
+
+**Laptop (Docker)** — `start_docker.sh` passes all three variables into the container and points `CYCLONEDDS_URI` at `cyclonedds_robot.xml` (pinned to the USB card). If the USB card is ever replaced, update the interface name in that file (`ip -4 addr` → the interface with a 192.168.4.x address). `cyclonedds_wlo1.xml` is the old config and should not be used.
+
+**Docker image** — build/rebuild after any change to `docker/Dockerfile`:
+```bash
+cd ~/OmnidirectionalPlatform
+docker build -t foxy-nav2 docker/
+./start_docker.sh
+```
+To open a second terminal in the running container: `docker exec -it $(docker ps -lq) bash`
+
+**Fix the Orange Pi clock on every boot** (it has no RTC and resets to an old date; wrong time breaks `apt` and makes RViz drop `/scan` and `/tf`). From an `ssh -R 8080` session:
+```bash
+sudo date -s "$(curl -sI -x socks5h://127.0.0.1:8080 http://google.com | grep -i '^date:' | cut -d' ' -f2-)"
+```
+
+**Discovery troubleshooting:** `ros2 daemon stop` and retry; `echo $CYCLONEDDS_URI` on both sides; test with `ros2 run demo_nodes_cpp talker` (Pi) / `listener` (container); `ping 192.168.4.1` should be a few ms when idle.
+
+## Camera (OV2710 USB, 120° FOV)
+
+**On the Orange Pi** (separate terminal from the bringup):
+```bash
+ros2 run v4l2_camera v4l2_camera_node --ros-args \
+  -p video_device:="/dev/video0" \
+  -p pixel_format:="YUYV" \
+  -p image_size:="[640,480]"
+```
+Publishes `/image_raw` (~28-30 Hz) and, with `ros-foxy-image-transport-plugins` installed, `/image_raw/compressed`. The "Unable to open camera calibration file" error is harmless.
+
+**On the laptop (container)** — always view the **compressed** topic:
+```bash
+ros2 topic hz /image_raw/compressed
+ros2 run rqt_image_view rqt_image_view   # select /image_raw/compressed
+```
+> ⚠️ Never subscribe to raw `/image_raw` from the laptop (rqt, RViz, `ros2 topic hz`). Raw 640x480 at 30 Hz is ~200 Mbit/s, which saturates the hotspot and takes down every other topic, including `/scan`. Nodes running on the Pi itself (e.g. YOLO) should use `/image_raw` locally.
+
+**If the LiDAR dies with `SL_RESULT_OPERATION_TIMEOUT`**, unplug and replug it, then relaunch.
 
 ## Mode A: Manual Teleoperation
 
@@ -102,7 +161,7 @@ ros2 launch dr_spaam_ros dr_spaam_ros.launch.py
 Here is a roadmap of upcoming features and expansions planned for the robot:
 
 1. Sensor Suite Expansions
-- Add a Camera: Integrate a depth or RGB camera for visual tracking or obstacle inspection.
+- ~~Add a Camera~~: RGB camera integrated and streaming to the laptop (see Camera section). Next: person detection and LiDAR-camera fusion.
 
 - IMU / Gyro Integration: Incorporate a hardware IMU to fuse high-frequency rotation data with rf2o laser odometry using an EKF (robot_localization).
 

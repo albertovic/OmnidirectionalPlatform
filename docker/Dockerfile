@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     ros-foxy-rmw-cyclonedds-cpp \
     ros-foxy-joy \
     ros-foxy-teleop-twist-joy \
+    ros-foxy-image-transport-plugins \
     nano \
     && rm -rf /var/lib/apt/lists/*
 
