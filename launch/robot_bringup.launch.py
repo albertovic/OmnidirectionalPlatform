@@ -36,6 +36,15 @@ def generate_launch_description():
             name='base_link_to_laser',
             arguments=['0.089', '0.0', '0.15', '3.14159', '0.0', '0.0', 'base_link', 'laser']
         ),
+
+        # Static Transform (Robot Center to Camera)
+        # Arguments: [x, y, z, yaw, pitch, roll, parent_frame, child_frame]
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='base_link_to_camera',
+            arguments=['0.14', '0.0', '0.08', '0.0', '0.0', '0.0', 'base_link', 'camera_link']
+        ),
         
         # RP-LiDAR Node
         Node(
@@ -49,6 +58,20 @@ def generate_launch_description():
                 'frame_id': 'laser',
                 'inverted': False,
                 'angle_compensate': True
+            }]
+        ),
+
+        # USB Camera (OV2710)
+        Node(
+            package='v4l2_camera',
+            executable='v4l2_camera_node',
+            name='v4l2_camera',
+            output='screen',
+            parameters=[{
+                'video_device': '/dev/video0',
+                'pixel_format': 'YUYV',
+                'image_size': [640, 480],
+                'camera_frame_id': 'camera_link'
             }]
         ),
 

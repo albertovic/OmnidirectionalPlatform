@@ -6,6 +6,7 @@ import time
 import math
 import cv2
 from sensor_msgs.msg import Image, CompressedImage
+from vision_msgs.msg import Detection2DArray, Detection2D, ObjectHypothesisWithPose
 
 class PersonDetector(Node):
     def __init__(self):
@@ -34,15 +35,17 @@ class PersonDetector(Node):
             CompressedImage, 
             '/person_detector/debug_image/compressed', 
             1)
+
+        self.det_pub = self.create_publisher(
+            Detection2DArray, 
+            '/person_detector/detections', 
+            10)
     
     def image_callback(self, msg):
         # Extract size and check for correct encoding
-        width = msg.width
-        height = msg.height
         if msg.encoding != "rgb8":
             self.get_logger().error(f"Wrong image encoding. Should be rgb8.")
             return
-        self.get_logger().info(f"Got {width}x{height} {msg.encoding}", throttle_duration_sec=1.0)
 
         # Reshapes 1D array into the 640x480 pixel matrix we want on the three RGB channels
         frame = np.frombuffer(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, 3)
@@ -63,6 +66,29 @@ class PersonDetector(Node):
                 self.get_logger().warn("Skipping a box with NaN/inf values", throttle_duration_sec=5.0)
                 continue
             detections.append([x1, y1, x2, y2, cx, h, conf])
+
+        det_array = Detection2DArray()
+        det_array.header = msg.header            # camera timestamp: lets other nodes match it with the LiDAR scan
+
+        for x1, y1, x2, y2, cx, h, conf in detections:
+            det = Detection2D()
+            det.header = msg.header
+
+            # Box: center + size, in pixels
+            det.bbox.center.x = cx
+            det.bbox.center.y = (y1 + y2) / 2
+            det.bbox.size_x = x2 - x1
+            det.bbox.size_y = y2 - y1
+
+            # What it is and how sure the model is
+            hyp = ObjectHypothesisWithPose()
+            hyp.id = 'person'
+            hyp.score = conf
+            det.results.append(hyp)
+
+            det_array.detections.append(det)
+
+        self.det_pub.publish(det_array)          # publish every frame, even with 0 detections
 
         self.get_logger().info(f"Detections: {detections}", throttle_duration_sec=1.0)
 
