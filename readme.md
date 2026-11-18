@@ -87,7 +87,7 @@ Publishes `/image_raw` (~28-30 Hz) and, with `ros-foxy-image-transport-plugins` 
 ros2 topic hz /image_raw/compressed
 ros2 run rqt_image_view rqt_image_view   # select /image_raw/compressed
 ```
-> ⚠️ Never subscribe to raw `/image_raw` from the laptop (rqt, RViz, `ros2 topic hz`). Raw 640x480 at 30 Hz is ~200 Mbit/s, which saturates the hotspot and takes down every other topic, including `/scan`. Nodes running on the Pi itself (e.g. YOLO) should use `/image_raw` locally.
+> **Warning:** Never subscribe to raw `/image_raw` from the laptop (rqt, RViz, `ros2 topic hz`). Raw 640x480 at 30 Hz is ~200 Mbit/s, which saturates the hotspot and takes down every other topic, including `/scan`. Nodes running on the Pi itself (e.g. YOLO) should use `/image_raw` locally.
 
 **If the LiDAR dies with `SL_RESULT_OPERATION_TIMEOUT`**, unplug and replug it, then relaunch.
 
@@ -149,11 +149,57 @@ Launch the visualization tools. Use the "2D Pose Estimate" button to tell the ro
 ros2 launch ./laptop_launch_files/visualize_omni_robot.launch.py
 ```
 
-## Activate People Tracking:
-Launch the people trackikng node (from the gtihub repo: https://github.com/TeamSOBITS/2d_lidar_person_detection/tree/humble-devel) through the following command:
+## Person Detection (YOLOv8n on the NPU)
+
+`person_detector` runs YOLOv8n on the Orange Pi's RK3588 NPU, detects people in `/image_raw` and publishes an annotated debug image. It replaces the old LiDAR-only people tracking (DR-SPAAM), which is no longer used. Measured: ~8-10 FPS, model in FP16.
+
+| | |
+| --- | --- |
+| Subscribes | `/image_raw` (`sensor_msgs/Image`, rgb8), queue depth 1 |
+| Publishes | `/person_detector/debug_image/compressed` (`sensor_msgs/CompressedImage`, JPEG) |
+| Parameters | `model_path` (default `~/ros2_ws_orangepi/src/omnidirectional_robot/models/yolov8n_rknn_model`) |
+| Detection settings | class 0 (person), confidence >= 0.5 |
+
+**Run it on the Orange Pi** (the camera node must be running, see Camera section):
 ```bash
-ros2 launch dr_spaam_ros dr_spaam_ros.launch.py 
+cd ~/ros2_ws_orangepi
+source install/setup.bash
+ros2 run omnidirectional_robot person_detector
 ```
+
+**View the detections on the laptop (container):**
+```bash
+ros2 run rqt_image_view rqt_image_view   # select /person_detector/debug_image/compressed
+```
+
+### One-time setup
+
+Model files live in `models/`, which is git-ignored: copy them by hand to the same folder on the Pi.
+
+**1. Export the model to RKNN (laptop host, not the container).** The converter only runs on x86 Linux with Python <= 3.12, so it gets its own venv:
+```bash
+cd ~/OmnidirectionalPlatform/models
+python3 -m venv ~/rknn-export && source ~/rknn-export/bin/activate
+pip install ultralytics "protobuf<7" "numpy<2.4"
+yolo export model=yolov8n.pt format=rknn name=rk3588     # creates yolov8n_rknn_model/
+deactivate
+scp -r yolov8n_rknn_model orangepi@192.168.4.1:~/ros2_ws_orangepi/src/omnidirectional_robot/models/
+```
+
+**2. Install the NPU runtime 2.3.2 on the Orange Pi** (must match the toolkit version used for the export). Both files are in `models/rknn-runtime-2.3.2/` on the laptop; copy them to the Pi's home folder with `scp`, then on the Pi (in an `ssh -R 8080` session):
+```bash
+sudo cp /usr/lib/librknnrt.so /usr/lib/librknnrt.so.1.4.0.bak
+sudo install -m 644 ~/librknnrt.so /usr/lib/librknnrt.so
+pip3 install --user --proxy socks5h://127.0.0.1:8080 ~/rknn_toolkit_lite2-2.3.2-cp38-*.whl
+pip3 install --user --proxy socks5h://127.0.0.1:8080 ultralytics
+```
+Ultralytics cannot install `rknn-toolkit-lite2` by itself on the Pi (it ignores the proxy), so the wheel is installed manually.
+
+### Known issues
+
+- **Driver warning:** `Current driver version: 0.8.2, recommend to upgrade ... >= 0.8.8` is printed at start-up. It works anyway.
+- **NaN boxes in FP16:** when a person is close and fills much of the frame, the FP16 model sometimes returns boxes with NaN values. The node skips them (logs `Skipping a box with NaN/inf values`), but that loses detections at close range. Planned fix: INT8 export, which decodes boxes on the CPU in full precision.
+- **Camera focus:** the lens focus is adjustable by turning the lens. Focus it at 1-2 m, the following distance.
 
 ---
 
@@ -161,7 +207,8 @@ ros2 launch dr_spaam_ros dr_spaam_ros.launch.py
 Here is a roadmap of upcoming features and expansions planned for the robot:
 
 1. Sensor Suite Expansions
-- ~~Add a Camera~~: RGB camera integrated and streaming to the laptop (see Camera section). Next: person detection and LiDAR-camera fusion.
+- ~~Add a Camera~~: RGB camera integrated and streaming to the laptop (see Camera section).
+- ~~Person detection~~: YOLOv8n on the NPU (see Person Detection section). Next: pixel to bearing, LiDAR range at that bearing, and a `person_follower` node.
 
 - IMU / Gyro Integration: Incorporate a hardware IMU to fuse high-frequency rotation data with rf2o laser odometry using an EKF (robot_localization).
 
