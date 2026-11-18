@@ -27,6 +27,7 @@ setup(
         'console_scripts': [
             'TwistToSerial = omnidirectional_robot.twist_to_serial:main',
             'mecanum_odom = omnidirectional_robot.mecanum_odom:main',
+            'person_detector = omnidirectional_robot.person_detector:main',
         ],
     },
 )
